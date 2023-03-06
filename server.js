@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 const app = express();
 
 // Connect to MongoDB database
-mongoose.connect("mongodb://localhost:27017/med-students", {
+mongoose.connect("mongodb://127.0.0.1:27017/med-students", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
@@ -13,8 +13,8 @@ mongoose.connect("mongodb://localhost:27017/med-students", {
 // Define schema and model for students collection
 const studentSchema = new mongoose.Schema({
   name: String,
-  email: String,
-  course: String,
+  age: Number,
+  gender: String,
 });
 
 const Student = mongoose.model("Student", studentSchema);
@@ -24,73 +24,55 @@ app.use(express.json());
 
 // Define routes for API endpoints
 
-// Get all students
-app.get("/api/students", (req, res) => {
-  Student.find({}, (err, students) => {
-    if (err) {
-      res.status(500).send(err);
-    } else {
-      res.status(200).json(students);
-    }
-  });
+app.post("/add-student", async (req, res) => {
+  const studentData = req.body;
+  const student = new Student(studentData);
+  try {
+    const result = await student.save(); // Use await to save data and store the result
+    console.log(result); // Log the result
+    res.status(201).send(result); // Send the result as a response
+  } catch (err) {
+    console.error(err); // Log any error
+    res.status(500).send(err); // Send the error as a response
+  }
 });
 
-// Get one student by id
-app.get("/api/students/:id", (req, res) => {
-  Student.findById(req.params.id, (err, student) => {
-    if (err) {
-      res.status(500).send(err);
-    } else {
-      if (student) {
-        res.status(200).json(student);
-      } else {
-        res.status(404).send("Student not found");
-      }
-    }
-  });
+app.get("/get-students", async (req, res) => {
+  try {
+    const students = await Student.find(); // Use await to find data and store the result
+    console.log(students); // Log the result
+    res.status(200).send(students); // Send the result as a response
+  } catch (err) {
+    console.error(err); // Log any error
+    res.status(500).send(err); // Send the error as a response
+  }
 });
 
-// Create a new student
-app.post("/api/students", (req, res) => {
-  const newStudent = new Student(req.body);
-  newStudent.save((err) => {
-    if (err) {
-      res.status(500).send(err);
-    } else {
-      res.status(201).json(newStudent);
-    }
-  });
+app.put("/update-student/:id", async (req, res) => {
+  const id = req.params.id;
+  const updateData = req.body;
+  try {
+    const updatedStudent = await Student.findByIdAndUpdate(id, updateData, {
+      new: true,
+    }); // Use await to update data and store the result
+    console.log(updatedStudent); // Log the result
+    res.status(200).send(updatedStudent); // Send the result as a response
+  } catch (err) {
+    console.error(err); // Log any error
+    res.status(500).send(err); // Send the error as a response
+  }
 });
 
-// Update an existing student by id
-app.put("/api/students/:id", (req, res) => {
-  Student.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    { new: true },
-    (err, newStudent) => {
-      if (err) {
-        res.status(500).send(err);
-      } else {
-        if (newStudent) {
-          res.status(200).json(newStudent);
-        } else {
-          res.status(404).send("Student not found");
-        }
-      }
-    }
-  );
-});
-
-// Delete an existing student by id
-app.delete("/api/students/:id", (req, res) => {
-  Student.findByIdAndDelete(req.params.id, (err) => {
-    if (err) {
-      res.status(500).send(err);
-    } else {
-      res.status(204).send("Student deleted");
-    }
-  });
+app.delete("/delete-student/:id", async (req, res) => {
+  const id = req.params.id;
+  try {
+    const deletedStudent = await Student.findByIdAndDelete(id); // Use await to delete data and store the result
+    console.log(deletedStudent); // Log the result
+    res.status(200).send(deletedStudent); // Send the result as a response
+  } catch (err) {
+    console.error(err); // Log any error
+    res.status(500).send(err); // Send the error as a response
+  }
 });
 
 // Start listening on port 3000
